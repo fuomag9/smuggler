@@ -21,21 +21,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import argparse
-import re
-import time
-import sys
 import os
-import random
-import string
-import importlib
-import hashlib
+import re
+import sys
+import time
 from copy import deepcopy
-from time import sleep
 from datetime import datetime
-from lib.Payload import Payload, Chunked, EndChunk
-from lib.EasySSL import EasySSL
-from lib.colorama import Fore, Style
+from time import sleep
 from urllib.parse import urlparse
+
+from lib.EasySSL import EasySSL
+from lib.Payload import Payload, Chunked, EndChunk
+from lib.colorama import Fore, Style
+
 
 class Desyncr:
 	def __init__(self, configfile, smhost, smport=443, url="", method="POST", endpoint="/",  SSLFlag=False, logh=None, smargs=None):
@@ -405,7 +403,8 @@ if __name__ == "__main__":
 	FileHandle = None
 	if Args.log is not None:
 		try:
-			FileHandle = open(Args.log, "w")
+			FileHandle = open(Args.log, "a")
+			FileHandle.write("-----------------\n")
 		except:
 			print_info("Error: Issue with log file destination")
 			print(Parser.print_help())

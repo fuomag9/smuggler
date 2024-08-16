@@ -1,18 +1,18 @@
 #!/usr/bin/python3
 # MIT License
-# 
+#
 # Copyright (c) 2020 Evan Custodio
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,7 +37,7 @@ from lib.EasySSL import EasySSL
 from lib.colorama import Fore, Style
 from urllib.parse import urlparse
 
-class Desyncr():
+class Desyncr:
 	def __init__(self, configfile, smhost, smport=443, url="", method="POST", endpoint="/",  SSLFlag=False, logh=None, smargs=None):
 		self._configfile = configfile
 		self._host = smhost
@@ -67,8 +67,8 @@ class Desyncr():
 			if res is None:
 				delta_time = end_time - start_time
 				if delta_time.seconds < (self._timeout-1):
-					return (2, res, payload_obj) # Return code 2 if disconnected before timeout
-				return (1, res, payload_obj) # Return code 1 if connection timedout
+					return 2, res, payload_obj  # Return code 2 if disconnected before timeout
+				return 1, res, payload_obj  # Return code 1 if connection timedout
 			# Filter out problematic characters
 			res_filtered = ""
 			for single in res:
@@ -78,14 +78,14 @@ class Desyncr():
 					res_filtered += chr(single)
 			res = res_filtered
 			#if '504' in res:
-			
+
 			#print("\n\n"+str(str(payload_obj)))
 			#print("\n\n"+res)
-			return (0, res, payload_obj) # Return code 0 if normal response returned
+			return 0, res, payload_obj  # Return code 0 if normal response returned
 		except Exception as exception_data:
 			#print(exception_data)
-			return (-1, None, payload_obj) # Return code -1 if some except occured
-		
+			return -1, None, payload_obj  # Return code -1 if some except occured
+
 	def _get_cookies(self):
 		RN = "\r\n"
 		try:
@@ -107,7 +107,7 @@ class Desyncr():
 			sleep(0.5)
 			res = web.recv_nb(2.0)
 			web.close()
-			if (res is not None):
+			if res is not None:
 				res = res.decode().split("\r\n")
 				for elem in res:
 					if len(elem) > 11:
@@ -127,11 +127,11 @@ class Desyncr():
 	def run(self):
 		RN = "\r\n"
 		mutations = {}
-		
+
 		if not self._get_cookies():
 			return
-			
-		if (self._configfile[1] != '/'):
+
+		if self._configfile[1] != '/':
 			self._configfile = os.path.dirname(os.path.realpath(__file__)) + "/configs/" + self._configfile
 
 		try:
@@ -140,16 +140,16 @@ class Desyncr():
 			error = ((Fore.CYAN + "Cannot find config file"+ Fore.MAGENTA), self._logh)
 			print_info("Error      : %s" % (error[0]))
 			exit(1)
-			
+
 		script = f.read()
 		f.close()
-		
+
 		exec(script)
-			
+
 		for mutation_name in mutations.keys():
 			if self._create_exec_test(mutation_name, mutations[mutation_name]) and self._exit_early:
 				break
-		
+
 		if self._quiet:
 			sys.stdout.write("\r"+" "*100+"\r")
 
@@ -157,16 +157,16 @@ class Desyncr():
 	# ptype == 1 (Edgecase payload, expected to work)
 	def _check_tecl(self, payload, ptype=0):
 		te_payload = deepcopy(payload)
-		if (self._vhost == ""):
+		if self._vhost == "":
 			te_payload.host = self._host
 		else:
 			te_payload.host = self._vhost
 		te_payload.method = self._method
 		te_payload.endpoint = self._endpoint
-		
+
 		if len(self._cookies) > 0:
 			te_payload.header += "Cookie: " + ''.join(self._cookies) + "\r\n"
-		
+
 		if not ptype:
 			te_payload.cl = 6 # timeout val == 6, good value == 5
 		else:
@@ -179,16 +179,16 @@ class Desyncr():
 	# ptype == 1 (Edgecase payload, expected to work)
 	def _check_clte(self, payload, ptype=0):
 		te_payload = deepcopy(payload)
-		if (self._vhost == ""):
+		if self._vhost == "":
 			te_payload.host = self._host
 		else:
 			te_payload.host = self._vhost
 		te_payload.method = self._method
 		te_payload.endpoint = self._endpoint
-		
+
 		if len(self._cookies) > 0:
 			te_payload.header += "Cookie: " + ''.join(self._cookies) + "\r\n"
-			
+
 		if not ptype:
 			te_payload.cl = 4 # timeout val == 4, good value == 11
 		else:
@@ -217,7 +217,7 @@ class Desyncr():
 
 		def write_payload(smhost, payload, ptype):
 			furl = smhost.replace('.', '_')
-			if (self.ssl_flag):
+			if self.ssl_flag:
 				furl = "https_" + furl
 			else:
 				furl = "http_" + furl
@@ -243,18 +243,18 @@ class Desyncr():
 		clte_res = self._check_clte(te_payload, 0)
 		clte_time = time.time()-start_time
 
-		if (clte_res[0] == 1):
+		if clte_res[0] == 1:
 			# Potential CLTE found
 			# Lets check the edge case to be sure
 			clte_res2 = self._check_clte(te_payload, 1)
 			if clte_res2[0] == 0:
 				self._attempts += 1
-				if (self._attempts < 3):
+				if self._attempts < 3:
 					return self._create_exec_test(name, te_payload)
 				else:
 					dismsg = Fore.RED + "Potential CLTE Issue Found" + Fore.MAGENTA + " - " + Fore.CYAN + self._method + Fore.MAGENTA + " @ " + Fore.CYAN + ["http://","https://",][self.ssl_flag]+ self._host + self._endpoint + Fore.MAGENTA + " - " + Fore.CYAN + self._configfile.split('/')[-1] + "\n"
 					pretty_print(name, dismsg)
-					
+
 					# Write payload out to file
 					write_payload(self._host, clte_res[2], "CLTE")
 					self._attempts = 0
@@ -265,20 +265,20 @@ class Desyncr():
 				dismsg = Fore.YELLOW + "CLTE TIMEOUT ON BOTH LENGTH 4 AND 11" + ["\n", ""][self._quiet]
 				pretty_print(name, dismsg)
 
-		elif (tecl_res[0] == 1):
+		elif tecl_res[0] == 1:
 			# Potential TECL found
 			# Lets check the edge case to be sure
 			tecl_res2 = self._check_tecl(te_payload, 1)
 			if tecl_res2[0] == 0:
 				self._attempts += 1
-				if (self._attempts < 3):
+				if self._attempts < 3:
 					return self._create_exec_test(name, te_payload)
 				else:
 					#print (str(tecl_res2[2]))
 					#print (tecl_res2[1])
 					dismsg = Fore.RED + "Potential TECL Issue Found" + Fore.MAGENTA + " - " + Fore.CYAN + self._method + Fore.MAGENTA + " @ " + Fore.CYAN + ["http://","https://",][self.ssl_flag]+ self._host + self._endpoint + Fore.MAGENTA + " - " + Fore.CYAN + self._configfile.split('/')[-1] + "\n"
 					pretty_print(name, dismsg)
-					
+
 					# Write payload out to file
 					write_payload(self._host, tecl_res[2], "TECL")
 					self._attempts = 0
@@ -293,27 +293,27 @@ class Desyncr():
 		#	# Both types of payloads not supported
 		#	dismsg = Fore.YELLOW + "NOT SUPPORTED" + ["\n", ""][self._quiet]
 		#	pretty_print(name, dismsg)
-		elif ((tecl_res[0] == -1) or (clte_res[0] == -1)):
+		elif (tecl_res[0] == -1) or (clte_res[0] == -1):
 			# ERROR
 			dismsg = Fore.YELLOW + "SOCKET ERROR" + ["\n", ""][self._quiet]
 			pretty_print(name, dismsg)
 
-		elif ((tecl_res[0] == 0) and (clte_res[0] == 0)):
+		elif (tecl_res[0] == 0) and (clte_res[0] == 0):
 			# No Desync Found
-			tecl_msg = (Fore.MAGENTA + " (TECL: " + Fore.CYAN +"%.2f" + Fore.MAGENTA + " - " + \
-			Fore.CYAN +"%s" + Fore.MAGENTA + ")") % (tecl_time, tecl_res[1][9:9+3])
+			tecl_msg = (Fore.MAGENTA + " (TECL: " + Fore.CYAN +"%.2f" + Fore.MAGENTA + " - " +
+                        Fore.CYAN +"%s" + Fore.MAGENTA + ")") % (tecl_time, tecl_res[1][9:9+3])
 
-			clte_msg = (Fore.MAGENTA + " (CLTE: " + Fore.CYAN +"%.2f" + Fore.MAGENTA + " - " + \
-			Fore.CYAN +"%s" + Fore.MAGENTA + ")") % (clte_time, clte_res[1][9:9+3])
+			clte_msg = (Fore.MAGENTA + " (CLTE: " + Fore.CYAN +"%.2f" + Fore.MAGENTA + " - " +
+                        Fore.CYAN +"%s" + Fore.MAGENTA + ")") % (clte_time, clte_res[1][9:9+3])
 
 			dismsg = Fore.GREEN + "OK" + tecl_msg + clte_msg + ["\n", ""][self._quiet]
 			pretty_print(name, dismsg)
 
-		elif ((tecl_res[0] == 2) or (clte_res[0] == 2)):
+		elif (tecl_res[0] == 2) or (clte_res[0] == 2):
 			# Disconnected
 			dismsg = Fore.YELLOW + "DISCONNECTED" + ["\n", ""][self._quiet]
 			pretty_print(name, dismsg)
-			
+
 		self._attempts = 0
 		return False
 
@@ -331,9 +331,9 @@ def process_uri(uri):
 		exit(1)
 
 	if u.port:
-		return (u.hostname, u.port, u.path, ssl_flag)
+		return u.hostname, u.port, u.path, ssl_flag
 	else:
-		return (u.hostname, std_port, u.path, ssl_flag)
+		return u.hostname, std_port, u.path, ssl_flag
 
 def CF(text):
 	global NOCOLOR
@@ -352,7 +352,7 @@ def banner(sm_version):
 	print(CF(r"(______/|_|_|_|____/ \___ |\___ |\_)_____)_|    "))
 	print(CF(r"                    (_____(_____|               "))
 	print(CF(r""))
-	print(CF(r"     @defparam                         %s"%(sm_version)))
+	print(CF(r"     @defparam                         %s" % sm_version))
 	print(CF(Style.RESET_ALL))
 
 def print_info(msg, file_handle=None):
